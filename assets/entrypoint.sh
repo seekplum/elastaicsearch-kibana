@@ -79,6 +79,8 @@ install_elastic() {
 }
 
 install_kibana() {
+  download_kibana
+
   tar zxvf /packages/kibana-6.4.1-linux-x86_64.tar.gz -C /home/$USERNAME && chown -R $USERNAME:$USERNAME /home/$USERNAME/kibana-6.4.1-linux-x86_64/
 
   sed -ie "s/.*server.port:.*/server.port: $KIBANA_PORT/" /home/$USERNAME/kibana-6.4.1-linux-x86_64/config/kibana.yml
