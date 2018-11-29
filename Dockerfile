@@ -1,18 +1,22 @@
 # 指定镜像源
 FROM centos:centos7.4.1708
 
-# 将工作目录设置为 /assets
-WORKDIR /assets
+RUN mkdir -p /packages
+
+RUN yum install -y wget
 
 # 将当前目录内容复制到位于 /assets 中的容器中
 ADD assets /assets
+ADD packages /packages
 
-RUN mkdir -p /packages
-
-ENV ELASTIC_PORT 9200
-ENV KIBANA_PORT 5601
+# 设置环境变量
+ENV ELASTIC_PORT 10015
+ENV KIBANA_PORT 10016
 
 ENV USERNAME es
+
+# 设置工作目录
+WORKDIR /home/${USERNAME}
 
 # 安装Java包
 RUN sh /assets/entrypoint.sh install_java
@@ -26,7 +30,7 @@ RUN sh /assets/entrypoint.sh install_kibana
 # 配置supervisor
 RUN sh /assets/entrypoint.sh configule_efk
 
-# 使端口 9200 可供此容器外的环境使用
+# 设置容器对外开放端口
 EXPOSE ${ELASTIC_PORT}
 EXPOSE ${KIBANA_PORT}
 

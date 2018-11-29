@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-export USERNAME=es
-export ELASTIC_PORT=10015
-export KIBANA_PORT=10016
-
 download_java() {
   if [ ! -f "/packages/jdk-8u181-linux-x64.rpm" ];then
     wget -O /packages/jdk-8u181-linux-x64.rpm https://download.oracle.com/otn/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm?AuthParam=1543413393_894d6cfda13de149ae7f09980303ae1a
@@ -21,6 +17,12 @@ download_kibana() {
   fi
 }
 
+download_supervisor() {
+  if [ ! -f "/packages/supervisor-3.3.4.tar.gz" ];then
+    wget -O /packages/supervisor-3.3.4.tar.gz https://files.pythonhosted.org/packages/44/60/698e54b4a4a9b956b2d709b4b7b676119c833d811d53ee2500f1b5e96dc3/supervisor-3.3.4.tar.gz
+  fi
+}
+
 create_user() {
   id $USERNAME || useradd -m $USERNAME
 }
@@ -33,15 +35,21 @@ set_map_count() {
 
 set_limits() {
   sed -ie "/\* soft nofile 65536/d" /etc/security/limits.conf
-  sed -ie "/\* hard nofile 131072/d" /etc/security/limits.conf
+  sed -ie "/\* hard nofile 65536/d" /etc/security/limits.conf
   sed -ie "/\* soft nproc 16384/d" /etc/security/limits.conf
   sed -ie "/\* hard nproc 16384/d" /etc/security/limits.conf
+  
+  sed -ie "/$USERNAME soft nofile 65536/d" /etc/security/limits.conf
+  sed -ie "/$USERNAME hard nofile 65536/d" /etc/security/limits.conf
 
   cat >>/etc/security/limits.conf <<EOF
 * soft nofile 65536
-* hard nofile 131072
+* hard nofile 65536
 * soft nproc 16384
 * hard nproc 16384
+
+$USERNAME soft nofile 65536
+$USERNAME hard nofile 65536
 EOF
 }
 
@@ -54,7 +62,7 @@ install_java() {
 }
 
 tar_elastic(){
-  tar zxvf /packages/elasticsearch-6.4.1.tar.gz -C /home/$USERNAME
+  tar zxvf /packages/elasticsearch-6.4.1.tar.gz -C /home/$USERNAME && chown -R $USERNAME:$USERNAME /home/$USERNAME/elasticsearch-6.4.1/
 
   sed -ie "s/.*http.port:.*/http.port: $ELASTIC_PORT/" /home/$USERNAME/elasticsearch-6.4.1/config/elasticsearch.yml
   sed -ie "s/.*network.host:.*/network.host: 0.0.0.0/" /home/$USERNAME/elasticsearch-6.4.1/config/elasticsearch.yml
@@ -71,7 +79,7 @@ install_elastic() {
 }
 
 install_kibana() {
-  tar zxvf /packages/kibana-6.4.1-linux-x86_64.tar.gz -C /home/$USERNAME
+  tar zxvf /packages/kibana-6.4.1-linux-x86_64.tar.gz -C /home/$USERNAME && chown -R $USERNAME:$USERNAME /home/$USERNAME/kibana-6.4.1-linux-x86_64/
 
   sed -ie "s/.*server.port:.*/server.port: $KIBANA_PORT/" /home/$USERNAME/kibana-6.4.1-linux-x86_64/config/kibana.yml
   sed -ie "s/.*server.host:.*/server.host: \"0.0.0.0\"/" /home/$USERNAME/kibana-6.4.1-linux-x86_64/config/kibana.yml
@@ -81,11 +89,12 @@ install_kibana() {
 }
 
 install_supervisor() {
+  yum install -y python-setuptools
   easy_install --index-url=http://pypi.douban.com/simple  pip
   pip install supervisor
 
-  mkdir -p /home/$USERNAME/sock/
-  mkdir -p /home/$USERNAME/logs/
+  mkdir -p /home/$USERNAME/sock/ && chown -R $USERNAME:$USERNAME /home/$USERNAME/sock
+  mkdir -p /home/$USERNAME/logs/ && chown -R $USERNAME:$USERNAME /home/$USERNAME/logs
   mkdir -p /etc/conf.d/
 
   cat >/etc/supervisord.conf<<EOF
@@ -94,7 +103,7 @@ file=/home/$USERNAME/sock/sendoh_supervisor.sock   ; (the path to the socket fil
 
 [supervisord]
 logfile=/home/$USERNAME/logs/supervisord.log ; (main log file;default $CWD/supervisord.log)
-logfile_maxbytes=50MB        ; (max main logfile bytes b4 rotation;default 50MB)
+logfile_maxbytes=10MB        ; (max main logfile bytes b4 rotation;default 50MB)
 logfile_backups=10           ; (num of main logfile rotation backups;default 10)
 loglevel=info                ; (log level;default info; others: debug,warn,trace)
 pidfile=/home/$USERNAME/sock/sendoh_supervisord.pid ; (supervisord pidfile;default supervisord.pid)
@@ -127,9 +136,9 @@ process_name=%(program_name)s ; process_name expr (default %(program_name)s)
 numprocs=1                    ; number of processes copies to start (def 1)
 redirect_stderr=true          ; redirect proc stderr to stdout (default false)
 stdout_logfile=/home/$USERNAME/logs/elasticsearch.log
-stdout_logfile_maxbytes=1MB   ; max # logfile bytes b4 rotation (default 50MB)
+stdout_logfile_maxbytes=10MB   ; max # logfile bytes b4 rotation (default 50MB)
 stdout_logfile_backups=10     ; # of stdout logfile backups (default 10)
-stdout_capture_maxbytes=1MB   ; number of bytes in 'capturemode' (default 0)
+stdout_capture_maxbytes=10MB   ; number of bytes in 'capturemode' (default 0)
 stdout_events_enabled=false   ; emit events on stdout writes (default false)
 directory=/home/$USERNAME/elasticsearch-6.4.1
 
@@ -140,9 +149,9 @@ user=es
 numprocs=1                    ; number of processes copies to start (def 1)
 redirect_stderr=true          ; redirect proc stderr to stdout (default false)
 stdout_logfile=/home/$USERNAME/logs/kibana.log
-stdout_logfile_maxbytes=1MB   ; max # logfile bytes b4 rotation (default 50MB)
+stdout_logfile_maxbytes=10MB   ; max # logfile bytes b4 rotation (default 50MB)
 stdout_logfile_backups=10     ; # of stdout logfile backups (default 10)
-stdout_capture_maxbytes=1MB   ; number of bytes in 'capturemode' (default 0)
+stdout_capture_maxbytes=10MB   ; number of bytes in 'capturemode' (default 0)
 stdout_events_enabled=false   ; emit events on stdout writes (default false)
 directory=/home/$USERNAME/kibana-6.4.1-linux-x86_64
 EOF
@@ -186,7 +195,6 @@ main() {
         esac
     done  
 }
-
 
 check_params $*
 main $*
