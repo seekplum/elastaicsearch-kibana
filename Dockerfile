@@ -28,7 +28,7 @@ RUN sh /assets/entrypoint.sh install_elastic
 RUN sh /assets/entrypoint.sh install_kibana
 
 # 配置supervisor
-RUN sh /assets/entrypoint.sh configule_efk
+RUN sh /assets/entrypoint.sh configuration_efk
 
 # 设置容器对外开放端口
 EXPOSE ${ELASTIC_PORT}

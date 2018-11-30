@@ -125,7 +125,7 @@ files = conf.d/*.conf
 EOF
 }
 
-configule_efk() {
+configuration_efk() {
   install_supervisor
 
   cat >/etc/conf.d/supervisor_efk.conf<<EOF
@@ -161,7 +161,7 @@ EOF
 
 # 打印帮助信息
 print_help() {
-    echo "Usage: bash $0 { install_java | install_elastic | install_kibana | configule_efk }"
+    echo "Usage: bash $0 { install_java | install_elastic | install_kibana | configuration_efk }"
     echo "e.g: bash $0 install_java"
 }
 
@@ -188,8 +188,8 @@ main() {
           install_kibana)
             install_kibana
             ;;
-          configule_efk)
-            configule_efk
+          configuration_efk)
+            configuration_efk
             ;;
           *)  # 匹配都失败执行
             print_help
