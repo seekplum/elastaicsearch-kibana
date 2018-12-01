@@ -209,11 +209,16 @@ get_loacl_ip() {
 
 # 打印帮助信息
 print_help() {
-    echo "Usage: bash $0 { install_td_agent | install_elastic_plugin | configuration_crs_log | configuration_asm_log | configuration_instance_log }"
+    echo "Usage: bash $0 { all | install_td_agent | install_elastic_plugin | configuration_crs_log | configuration_asm_log | configuration_instance_log }"
     echo "e.g: bash $0 install_td_agent"
 }
 
 check_params() {
+	if [ $# == 0 ]; then
+		print_help
+		exit 0
+    fi
+
     for argument in $*
     do
        if [ "${argument}" == "-h" ] || [ "${argument}" == "--help" ]; then
@@ -227,6 +232,13 @@ main() {
     for func_name in $*
     do
         case "${func_name}" in
+          all)
+            install_td_agent
+            install_elastic_plugin
+            configuration_crs_log
+            configuration_asm_log
+            configuration_instance_log
+            ;;
           install_td_agent)
             install_td_agent
             ;;
