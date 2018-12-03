@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-ELASTIC_HOST=192.168.1.78
+ELASTIC_HOST=10.10.20.98
 ELASTIC_PORT=10015
 
 YUM_HOST=10.10.20.98
@@ -25,6 +25,8 @@ TD_AGENT_LOG_PATH=/var/log/td-agent
 
 
 install_td_agent() {
+    $TD_AGENT stop >/dev/null 2&>1
+
 	cat >/etc/yum.repos.d/loacl-rpms.repo <<EOF
 [td-agent]
 name=Server
@@ -33,11 +35,12 @@ enable=1
 gpgcheck=0
 EOF
 
-    yum install -y td-agent
+    number=$(rpm -qa | grep td-agent | wc -l)
+    if [ ! $number -gt 0 ];then
+        yum install -y td-agent
+        mkdir -p $TD_AGENT_CONF
 
-    mkdir -p $TD_AGENT_CONF
-
-    cat >>$TD_AGENT_PATH/td-agent.conf<<EOF
+        cat >>$TD_AGENT_PATH/td-agent.conf<<EOF
 
 @include conf.d/*.conf
 
@@ -47,30 +50,53 @@ EOF
 
 EOF
 
-    sed -i "s/TD_AGENT_USER=td-agent/TD_AGENT_USER=root/g" $TD_AGENT
-    sed -i "s/TD_AGENT_GROUP=td-agent/TD_AGENT_GROUP=root/g" $TD_AGENT
+        sed -i "s/TD_AGENT_USER=td-agent/TD_AGENT_USER=root/g" $TD_AGENT
+        sed -i "s/TD_AGENT_GROUP=td-agent/TD_AGENT_GROUP=root/g" $TD_AGENT
+    fi
 }
 
+install_libcurl() {
+    number=$(rpm -qa | grep ^libcurl-devel | wc -l)
+    if [ ! $number -gt 0 ];then
+        yum install -y libcurl-devel
+    fi
+}
+
+install_gcc() {
+    number=$(rpm -qa | grep ^gcc | wc -l)
+    if [ ! $number -gt 0 ];then
+        yum install -y gcc
+    fi
+}
+
+
 install_elastic_plugin() {
-  yum install -y libcurl-devel gcc
-  
-  
+    install_libcurl
+    install_gcc
+
 	if [ ! -f $GEM_PATH/fluent-plugin-elasticsearch*.gem ];then
 		echo -e "\033[31mno such directory $GEM_PATH\033[0m"
 	else
-		cd $GEM_PATH && td-agent-gem install fluent-plugin-elasticsearch*.gem --local
+        number=$(td-agent-gem list | grep fluent-plugin-elasticsearch | wc -l)
+        if [ ! $number -gt 0 ];then
+              cd $GEM_PATH && td-agent-gem install fluent-plugin-elasticsearch*.gem --local
+        fi
 	fi
 }
 
 
 install_date_plugin() {
-	yum install -y libcurl-devel gcc
+    install_libcurl
+    install_gcc
 
-  if [ ! -f $GEM_PATH/fluent-plugin-dio*.gem ];then
-    echo -e "\033[31mno such directory $GEM_PATH/fluent-plugin-dio*.gem\033[0m"
-  else
-    cd $GEM_PATH && td-agent-gem install fluent-plugin-dio*.gem --local
-  fi
+    if [ ! -f $GEM_PATH/fluent-plugin-dio*.gem ];then
+        echo -e "\033[31mno such directory $GEM_PATH/fluent-plugin-dio*.gem\033[0m"
+    else
+        number=$(td-agent-gem list | grep fluent-plugin-dio | wc -l)
+        if [ ! $number -gt 0 ];then
+           cd $GEM_PATH && td-agent-gem install fluent-plugin-dio*.gem --local
+        fi
+    fi
 }
 
 
