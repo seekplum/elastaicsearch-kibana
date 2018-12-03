@@ -52,18 +52,25 @@ EOF
 }
 
 install_elastic_plugin() {
-    yum install -y libcurl-devel gcc
-
-	if [ ! -d $GEM_PATH ];then
-		echo no such directory $GEM_PATH
+  yum install -y libcurl-devel gcc
+  
+  
+	if [ ! -f $GEM_PATH/fluent-plugin-elasticsearch*.gem ];then
+		echo -e "\033[31mno such directory $GEM_PATH\033[0m"
 	else
-		cd $GEM_PATH && td-agent-gem install fluent-plugin-elasticsearch-2.12.2.gem --local
+		cd $GEM_PATH && td-agent-gem install fluent-plugin-elasticsearch*.gem --local
 	fi
 }
 
 
-install_multiline_plugin() {
-	cd $GEM_PATH && td-agent-gem install fluent-plugin-tail-multiline --local
+install_date_plugin() {
+	yum install -y libcurl-devel gcc
+
+  if [ ! -f $GEM_PATH/fluent-plugin-dio*.gem ];then
+    echo -e "\033[31mno such directory $GEM_PATH/fluent-plugin-dio*.gem\033[0m"
+  else
+    cd $GEM_PATH && td-agent-gem install fluent-plugin-dio*.gem --local
+  fi
 }
 
 
@@ -93,6 +100,11 @@ configuration_crs_log() {
     ip $ip
     log_type crs
   </record>
+</filter>
+
+<filter crs.log>
+  @type dio
+  keys log_time
 </filter>
 
 <match crs.log>
@@ -137,6 +149,11 @@ configuration_asm_log() {
     ip $ip
     log_type asm
   </record>
+</filter>
+
+<filter asm.log>
+  @type dio
+  keys log_time
 </filter>
 
 <match asm.log>
@@ -185,6 +202,11 @@ configuration_instance_log() {
   </record>
 </filter>
 
+<filter instance.log>
+  @type dio
+  keys log_time
+</filter>
+
 <match instance.log>
   @type elasticsearch
   host $ELASTIC_HOST
@@ -209,8 +231,8 @@ get_loacl_ip() {
 
 # 打印帮助信息
 print_help() {
-    echo "Usage: bash $0 { all | install_td_agent | install_elastic_plugin | configuration_crs_log | configuration_asm_log | configuration_instance_log }"
-    echo "e.g: bash $0 install_td_agent"
+    echo "Usage: bash $0 { all | install_td_agent | install_elastic_plugin | install_date_plugin | configuration_crs_log | configuration_asm_log | configuration_instance_log }"
+    echo -e "\033[32me.g: bash $0 install_td_agent\033[0m"
 }
 
 check_params() {
@@ -235,12 +257,17 @@ main() {
           all)
             install_td_agent
             install_elastic_plugin
+            install_date_plugin
+
             configuration_crs_log
             configuration_asm_log
             configuration_instance_log
             ;;
           install_td_agent)
             install_td_agent
+            ;;
+          install_date_plugin)
+            install_date_plugin
             ;;
           install_elastic_plugin)
             install_elastic_plugin
