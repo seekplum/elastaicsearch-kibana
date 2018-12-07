@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-ELASTIC_HOST=10.10.20.98
+ELASTIC_HOST=192.168.1.78
 ELASTIC_PORT=10015
+
+ELASTIC_HOST1=10.10.100.38
+ELASTIC_PORT1=10015
+
+HOSTNAME=`hostname`
 
 YUM_HOST=10.10.20.98
 YUM_PORT=8080
@@ -25,7 +30,8 @@ TD_AGENT_LOG_PATH=/var/log/td-agent
 
 
 install_td_agent() {
-    $TD_AGENT stop >/dev/null 2&>1
+  print install_td_agent
+  $TD_AGENT stop >/dev/null 2&>1
 
 	cat >/etc/yum.repos.d/loacl-rpms.repo <<EOF
 [td-agent]
@@ -35,12 +41,12 @@ enable=1
 gpgcheck=0
 EOF
 
-    number=$(rpm -qa | grep td-agent | wc -l)
-    if [ ! $number -gt 0 ];then
-        yum install -y td-agent
-        mkdir -p $TD_AGENT_CONF
+  number=$(rpm -qa | grep td-agent | wc -l)
+  if [ ! $number -gt 0 ];then
+    yum install -y td-agent
+    mkdir -p $TD_AGENT_CONF
 
-        cat >>$TD_AGENT_PATH/td-agent.conf<<EOF
+    cat >>$TD_AGENT_PATH/td-agent.conf<<EOF
 
 @include conf.d/*.conf
 
@@ -50,65 +56,67 @@ EOF
 
 EOF
 
-        sed -i "s/TD_AGENT_USER=td-agent/TD_AGENT_USER=root/g" $TD_AGENT
-        sed -i "s/TD_AGENT_GROUP=td-agent/TD_AGENT_GROUP=root/g" $TD_AGENT
-    fi
+    sed -i "s/TD_AGENT_USER=td-agent/TD_AGENT_USER=root/g" $TD_AGENT
+    sed -i "s/TD_AGENT_GROUP=td-agent/TD_AGENT_GROUP=root/g" $TD_AGENT
+  fi
 }
 
 install_libcurl() {
-    number=$(rpm -qa | grep ^libcurl-devel | wc -l)
-    if [ ! $number -gt 0 ];then
-        yum install -y libcurl-devel
-    fi
+  number=$(rpm -qa | grep ^libcurl-devel | wc -l)
+  if [ ! $number -gt 0 ];then
+      yum install -y libcurl-devel
+  fi
 }
 
 install_gcc() {
-    number=$(rpm -qa | grep ^gcc | wc -l)
-    if [ ! $number -gt 0 ];then
-        yum install -y gcc
-    fi
+  number=$(rpm -qa | grep ^gcc | wc -l)
+  if [ ! $number -gt 0 ];then
+      yum install -y gcc
+  fi
 }
 
 
 install_elastic_plugin() {
-    install_libcurl
-    install_gcc
+  print install_elastic_plugin
+  install_libcurl
+  install_gcc
 
 	if [ ! -f $GEM_PATH/fluent-plugin-elasticsearch*.gem ];then
 		echo -e "\033[31mno such directory $GEM_PATH\033[0m"
 	else
-        number=$(td-agent-gem list | grep fluent-plugin-elasticsearch | wc -l)
-        if [ ! $number -gt 0 ];then
-              cd $GEM_PATH && td-agent-gem install fluent-plugin-elasticsearch*.gem --local
-        fi
+      number=$(td-agent-gem list | grep fluent-plugin-elasticsearch | wc -l)
+      if [ ! $number -gt 0 ];then
+            cd $GEM_PATH && td-agent-gem install fluent-plugin-elasticsearch*.gem --local
+      fi
 	fi
 }
 
 
 install_date_plugin() {
-    install_libcurl
-    install_gcc
+  print install_date_plugin
+  install_libcurl
+  install_gcc
 
-    if [ ! -f $GEM_PATH/fluent-plugin-dio*.gem ];then
-        echo -e "\033[31mno such directory $GEM_PATH/fluent-plugin-dio*.gem\033[0m"
-    else
-        number=$(td-agent-gem list | grep fluent-plugin-dio | wc -l)
-        if [ ! $number -gt 0 ];then
-           cd $GEM_PATH && td-agent-gem install fluent-plugin-dio*.gem --local
-        fi
+  if [ ! -f $GEM_PATH/fluent-plugin-dio*.gem ];then
+    echo -e "\033[31mno such directory $GEM_PATH/fluent-plugin-dio*.gem\033[0m"
+  else
+    number=$(td-agent-gem list | grep fluent-plugin-dio | wc -l)
+    if [ ! $number -gt 0 ];then
+        cd $GEM_PATH && td-agent-gem install fluent-plugin-dio*.gem --local
     fi
+  fi
 }
 
 
 configuration_crs_log() {
-	mkdir -p $TD_AGENT_LOG_PATH/crs
+  print configuration_crs_log
 
-	ip=$(get_loacl_ip)
+  ip=$(get_loacl_ip)
 
-    cat >$TD_AGENT_CONF/crs.conf <<EOF
+  cat >$TD_AGENT_CONF/crs.conf <<EOF
 <source>
   @type tail
-  path $GRID_HOME/log/`hostname`/alert`hostname`.log
+  path $GRID_HOME/log/$HOSTNAME/alert$HOSTNAME.log
   pos_file $TD_AGENT_LOG_PATH/crs/crs.log.pos
   tag crs.log
 
@@ -134,27 +142,49 @@ configuration_crs_log() {
 </filter>
 
 <match crs.log>
+  @type copy
+  @include crs.conf.d/*.conf
+</match>
+EOF
+
+  mkdir -p $TD_AGENT_CONF/crs.conf.d
+  cat >$TD_AGENT_CONF/crs.conf.d/$ELASTIC_HOST.conf <<EOF
+<store>
   @type elasticsearch
   host $ELASTIC_HOST
   port $ELASTIC_PORT
 
-  time_format %Y-%m-%d %H:%M:%S
   time_key time
   flush_interval 2s
   buffer_queue_limit 4096
   buffer_chunk_limit 1024m
   num_threads 4
   logstash_format true
-</match>
+</store>
+EOF
+
+  cat >$TD_AGENT_CONF/crs.conf.d/$ELASTIC_HOST1.conf <<EOF
+<store>
+  @type elasticsearch
+  host $ELASTIC_HOST1
+  port $ELASTIC_PORT1
+
+  time_key time
+  flush_interval 2s
+  buffer_queue_limit 4096
+  buffer_chunk_limit 1024m
+  num_threads 4
+  logstash_format true
+</store>
 EOF
 }
 
 configuration_asm_log() {
-	mkdir -p $TD_AGENT_LOG_PATH/asm
+  print configuration_asm_log
 
 	ip=$(get_loacl_ip)
 
-    cat >$TD_AGENT_CONF/asm.conf <<EOF
+  cat >$TD_AGENT_CONF/asm.conf <<EOF
 <source>
   @type tail
   path $GRID_BASE/diag/asm/+asm/$ORACLE_SID/trace/alert_$ORACLE_SID.log
@@ -201,11 +231,10 @@ EOF
 
 
 configuration_instance_log() {
-	mkdir -p $TD_AGENT_LOG_PATH/instance
+  print configuration_instance_log
+  ip=$(get_loacl_ip)
 
-	ip=$(get_loacl_ip)
-
-    cat >$TD_AGENT_CONF/instance.conf <<EOF
+  cat >$TD_AGENT_CONF/instance.conf <<EOF
 <source>
   @type tail
   path $ORACLE_BASE/diag/rdbms/$DATABASE_NAME/$INSTANCE_NAME/trace/alert_$INSTANCE_NAME.log
@@ -253,6 +282,10 @@ EOF
 get_loacl_ip() {
 	ip=`ip a | grep inet | grep -v "127.0.0.1" | grep -v "::1" | grep -v "ib" | grep -v "docker" | grep -v "inet6 "| grep -v ":" | awk '{print$2}' | awk -F "/" '{print $1}'`
 	echo $ip
+}
+
+print () {
+    echo -e "\033[32m$1\033[0m"
 }
 
 # 打印帮助信息
