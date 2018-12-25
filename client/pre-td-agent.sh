@@ -10,6 +10,8 @@ td-agent-gem install fluent-plugin-dio
 
 td-agent-gem install fluent-plugin-elasticsearch
 
+td-agent-gem install fluent-plugin-out-http
+
 rm -rf /tmp/gem-cache
 
 cp -r /opt/td-agent/embedded/lib/ruby/gems/2.1.0/cache /tmp/gem-cache

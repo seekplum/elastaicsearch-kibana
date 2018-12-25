@@ -12,6 +12,7 @@
 * td-agent: 收集日志程序
 * fluent-plugin-elasticsearch: 把fluentd收集日志发送到elastic
 * fluent-plugin-dio: 把日期字符串转成时间戳
+* fluent-plugin-out-http: 发送http请求
 
 ## 使用
 
@@ -20,3 +21,6 @@
 
 ### 安装td-agent和elastic插件
 > bash deploy.sh install_td_agent install_elastic_plugin
+
+## 下载fluentd插件
+> docker run \-\-rm \-\-name download-fluentd-plugin -v $(pwd):/tmp centos:centos7.4.1708 bash /tmp/pre-td-agent.sh
