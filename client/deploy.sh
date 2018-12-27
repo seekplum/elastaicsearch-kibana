@@ -8,6 +8,8 @@ YUM_PORT=8080
 GEM_PATH=$file_path/gem-cache
 FLUENTD_PORT=24444
 
+PROMETHEUS_PORT=24231
+
 TD_AGENT_PATH=/etc/td-agent
 TD_AGENT_CONF_PATH=$TD_AGENT_PATH/td-agent.conf
 TD_AGENT_CONFD=$TD_AGENT_PATH/conf.d
@@ -40,6 +42,21 @@ EOF
   rpc_endpoint 127.0.0.1:$FLUENTD_PORT
 </system>
 
+<source>
+  @type prometheus
+  bind 0.0.0.0
+  port $PROMETHEUS_PORT
+  metrics_path /metrics
+</source>
+<source>
+  @type monitor_agent
+</source>
+<source>
+  @type prometheus_monitor
+</source>
+<source>
+  @type prometheus_output_monitor
+</source>
 EOF
   fi
   
