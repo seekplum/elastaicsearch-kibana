@@ -1,39 +1,46 @@
 #!/usr/bin/env bash
 download_java() {
+  print "download java"
   if [ ! -f "/packages/jdk-8u181-linux-x64.rpm" ];then
     wget -O /packages/jdk-8u181-linux-x64.rpm https://download.oracle.com/otn/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm?AuthParam=1543413393_894d6cfda13de149ae7f09980303ae1a
   fi
 }
 
 download_elastic() {
+  print "download elasticsearch"
   if [ ! -f "/packages/elasticsearch-6.4.1.tar.gz" ];then
     wget -O /packages/elasticsearch-6.4.1.tar.gz https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.4.1.tar.gz
   fi
 }
 
 download_kibana() {
+  print "download kibana"
   if [ ! -f "/packages/kibana-6.4.1-linux-x86_64.tar.gz" ];then
     wget -O /packages/kibana-6.4.1-linux-x86_64.tar.gz https://artifacts.elastic.co/downloads/kibana/kibana-6.4.1-linux-x86_64.tar.gz
   fi
 }
 
 download_supervisor() {
+  print "download supervisor"
   if [ ! -f "/packages/supervisor-3.3.4.tar.gz" ];then
     wget -O /packages/supervisor-3.3.4.tar.gz https://files.pythonhosted.org/packages/44/60/698e54b4a4a9b956b2d709b4b7b676119c833d811d53ee2500f1b5e96dc3/supervisor-3.3.4.tar.gz
   fi
 }
 
 create_user() {
+  print "create user"
   id $USERNAME || useradd -m $USERNAME
 }
 
 set_map_count() {
+  print "set vm.max_map_count"
   sed -ie "/vm.max_map_count*=*/d" /etc/sysctl.conf
   echo "vm.max_map_count=262144" >> /etc/sysctl.conf
   sysctl -p
 }
 
 set_limits() {
+  print "set limits"
   sed -ie "/\* soft nofile 65536/d" /etc/security/limits.conf
   sed -ie "/\* hard nofile 65536/d" /etc/security/limits.conf
   sed -ie "/\* soft nproc 16384/d" /etc/security/limits.conf
@@ -54,6 +61,7 @@ EOF
 }
 
 install_java() {
+  print "install java"
   download_java
   
   rpm -qa | grep -i java | xargs rpm -e --nodeps
@@ -62,6 +70,7 @@ install_java() {
 }
 
 tar_elastic(){
+  print "tar elastic"
   tar zxvf /packages/elasticsearch-6.4.1.tar.gz -C /home/$USERNAME && chown -R $USERNAME:$USERNAME /home/$USERNAME/elasticsearch-6.4.1/
 
   sed -ie "s/.*http.port:.*/http.port: $ELASTIC_PORT/" /home/$USERNAME/elasticsearch-6.4.1/config/elasticsearch.yml
@@ -71,6 +80,7 @@ tar_elastic(){
 }
 
 install_elastic() {
+  print "install elastic"
   create_user
   download_elastic
   set_limits
@@ -79,6 +89,7 @@ install_elastic() {
 }
 
 install_kibana() {
+  print "install kibana"
   download_kibana
 
   tar zxvf /packages/kibana-6.4.1-linux-x86_64.tar.gz -C /home/$USERNAME && chown -R $USERNAME:$USERNAME /home/$USERNAME/kibana-6.4.1-linux-x86_64/
@@ -91,6 +102,7 @@ install_kibana() {
 }
 
 install_supervisor() {
+  print "install supervisor"
   yum install -y python-setuptools
   easy_install --index-url=http://pypi.douban.com/simple  pip
   pip install supervisor
@@ -126,6 +138,7 @@ EOF
 }
 
 configuration_efk() {
+  print "configuration efk conf"
   install_supervisor
 
   cat >/etc/conf.d/supervisor_efk.conf<<EOF
@@ -165,6 +178,10 @@ print_help() {
     echo "e.g: bash $0 install_java"
 }
 
+print () {
+    echo -e "\033[32m$1\033[0m"
+}
+
 check_params() {
     for argument in $*
     do
@@ -191,9 +208,9 @@ main() {
           configuration_efk)
             configuration_efk
             ;;
-          *)  # 匹配都失败执行
-            print_help
-            exit 1
+          *)
+            ${func_name}
+            ;;
         esac
     done  
 }
