@@ -33,8 +33,8 @@ EOF
   number=$(rpm -qa | grep td-agent | wc -l)
   if [ ! $number -gt 0 ];then
     yum install -y td-agent
-
-    cat >>$TD_AGENT_CONF_PATH<<EOF
+  fi
+  cat >>$TD_AGENT_CONF_PATH<<EOF
 
 @include conf.d/*.conf
 
@@ -49,20 +49,18 @@ EOF
   metrics_path /metrics
 </source>
 <source>
-  @type monitor_agent
-</source>
-<source>
-  @type prometheus_monitor
-</source>
 <source>
   @type prometheus_output_monitor
+  interval 10
+  <labels>
+    hostname ${hostname}
+  </labels>
 </source>
 EOF
-  fi
-  
+
   mkdir -p $TD_AGENT_CONFD
   sed -i "s/TD_AGENT_USER=td-agent/TD_AGENT_USER=root/g" $TD_AGENT
-  sed -i "s/TD_AGENT_GROUP=td-agent/TD_AGENT_GROUP=root/g" $TD_AGENT
+  sed -i "s/TD_AGENT_GROUP=td-agent/TD_AGENT_GROUP=root\nRUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=0.9/g" $TD_AGENT
 }
 
 install_libcurl() {
