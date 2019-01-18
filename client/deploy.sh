@@ -40,6 +40,7 @@ EOF
 
 <system>
   rpc_endpoint 127.0.0.1:$FLUENTD_PORT
+  workers 4
 </system>
 
 <source>
@@ -48,7 +49,6 @@ EOF
   port $PROMETHEUS_PORT
   metrics_path /metrics
 </source>
-<source>
 <source>
   @type prometheus_output_monitor
   interval 10
