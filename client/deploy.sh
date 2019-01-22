@@ -40,7 +40,6 @@ EOF
 
 <system>
   rpc_endpoint 127.0.0.1:$FLUENTD_PORT
-  workers 4
 </system>
 
 <source>
