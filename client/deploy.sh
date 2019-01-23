@@ -3,7 +3,7 @@ RETVAL=0
 current_path=`pwd`
 file_path=$(dirname $0)
 
-YUM_HOST=10.10.100.38
+YUM_HOST=10.10.100.184
 YUM_PORT=8080
 GEM_PATH=$file_path/gem-cache
 FLUENTD_PORT=24444
@@ -52,7 +52,7 @@ EOF
   @type prometheus_output_monitor
   interval 10
   <labels>
-    hostname ${hostname}
+    hostname \${hostname}
   </labels>
 </source>
 EOF

@@ -16,6 +16,7 @@ install_env() {
 install_target() {
     print "install target"
     # curl -L https://toolbelt.treasuredata.com/sh/install-redhat-td-agent2.sh | sh
+    # curl -L https://toolbelt.treasuredata.com/sh/install-redhat-td-agent3.sh | sh
     bash $file_path/deploy.sh install_td_agent
 }
 
@@ -30,7 +31,7 @@ install_plugin () {
 copy_gem_cache() {
     print "copy gem chache"
     rm -rf /tmp/gem-cache
-    cp -r /opt/td-agent/embedded/lib/ruby/gems/2.1.0/cache /tmp/gem-cache
+    cp -r /opt/td-agent/embedded/lib/ruby/gems/2.4.0/cache /tmp/gem-cache
 }
 
 install_env
