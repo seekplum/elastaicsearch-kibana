@@ -12,5 +12,9 @@
 
 > docker run \--\rm -it -p 10015:10015 -p 10016:10016 seekplum/elasticsearch-kibana bash
 
+## 启动容器前准备(设置虚拟内存和文件句柄)
+
+> bash assets/entrypoint.sh set_map_count set_limits
+
 ## 注意
 * 1.jdk包在线下载非常缓慢，在build镜像时建议先下载放入 `packages/jdk-8u181-linux-x64.rpm` 中, [官方下载地址](https://download.oracle.com/otn/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm)
