@@ -30,6 +30,9 @@ RUN sh /assets/entrypoint.sh install_kibana
 # 配置supervisor
 RUN sh /assets/entrypoint.sh configuration_efk
 
+# 删除相关源文件
+RUN sh /assets/entrypoint.sh clear_files
+
 # 设置容器对外开放端口
 EXPOSE ${ELASTIC_PORT}
 EXPOSE ${KIBANA_PORT}

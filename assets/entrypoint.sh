@@ -27,6 +27,13 @@ download_supervisor() {
   fi
 }
 
+clear_files() {
+  rm -rf /packages/supervisor-3.3.4.tar.gz
+  rm -rf /packages/kibana-6.4.1-linux-x86_64.tar.gz
+  rm -rf /packages/elasticsearch-6.4.1.tar.gz
+  rm -rf /packages/jdk-8u181-linux-x64.rpm
+}
+
 create_user() {
   print "create user"
   id $USERNAME || useradd -m $USERNAME
@@ -204,6 +211,9 @@ main() {
             ;;
           install_kibana)
             install_kibana
+            ;;
+          clear_files)
+            clear_files
             ;;
           configuration_efk)
             configuration_efk
