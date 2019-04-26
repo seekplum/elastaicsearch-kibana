@@ -3,7 +3,7 @@ RETVAL=0
 current_path=`pwd`
 file_path=$(dirname $0)
 
-YUM_HOST=10.10.100.184
+YUM_HOST=127.0.0.1
 YUM_PORT=8080
 GEM_PATH=$file_path/gem-cache
 FLUENTD_PORT=24444
